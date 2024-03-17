@@ -10,11 +10,19 @@ class Unet(nn.Module):
         self.in_chans = in_chans
         self.out_chans = out_chans
 
+        # Conv. Unet에서는 3x3 필터를 사용한다.
         self.first_block = ConvBlock(in_chans, 2)
+        # Down 함수를 통한 다운샘플링
         self.down1 = Down(2, 4)
+        # UP 함수를 통한 업샘플링
         self.up1 = Up(4, 2)
+        # Conv2d가 중요한 함수다.
+        # kernel_size는 커널 가로세로 크기를 의미한다. 여기선 1x1이다.
+        # out_chans는 커널의 개수를 의미한다.
+        ### 커널의 초기값은 랜덤으로 정해지고, Backpropagation으로 갱신된다. ###
         self.last_block = nn.Conv2d(2, out_chans, kernel_size=1)
 
+    # 정규화.
     def norm(self, x):
         b, h, w = x.shape
         x = x.view(b, h * w)
@@ -28,6 +36,8 @@ class Unet(nn.Module):
 
     def forward(self, input):
         input, mean, std = self.norm(input)
+        # unsqueeze 함수: 지정한 차원 자리에 size가 1인 빈 공간을 추가한다.
+        # squeeze 함수는 반대로 size가 1인 공간을 제거한다
         input = input.unsqueeze(1)
         d1 = self.first_block(input)
         m0 = self.down1(d1)
@@ -39,6 +49,7 @@ class Unet(nn.Module):
         return output
 
 
+# U-net에서 오른쪽으로 이동하는 과정.
 class ConvBlock(nn.Module):
 
     def __init__(self, in_chans, out_chans):
@@ -46,6 +57,7 @@ class ConvBlock(nn.Module):
         self.in_chans = in_chans
         self.out_chans = out_chans
         self.layers = nn.Sequential(
+            # 필터를 통한 연산 -> 배치 정규화 -> 활성화 함수를 적용. 총 2번
             nn.Conv2d(in_chans, out_chans, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_chans),
             nn.ReLU(inplace=True),
@@ -58,6 +70,7 @@ class ConvBlock(nn.Module):
         return self.layers(x)
 
 
+# U-net에서 아래로 내려가는 과정, Max pooling 2x2.
 class Down(nn.Module):
 
     def __init__(self, in_chans, out_chans):
@@ -65,6 +78,7 @@ class Down(nn.Module):
         self.in_chans = in_chans
         self.out_chans = out_chans
         self.layers = nn.Sequential(
+            # 2x2 풀링
             nn.MaxPool2d(2),
             ConvBlock(in_chans, out_chans)
         )

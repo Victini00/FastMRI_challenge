@@ -94,12 +94,15 @@ def save_model(args, exp_dir, epoch, model, optimizer, best_val_loss, is_new_bes
 
         
 def train(args):
+    # 디바이스 사용 가능하면 쓰겠다.
     device = torch.device(f'cuda:{args.GPU_NUM}' if torch.cuda.is_available() else 'cpu')
     torch.cuda.set_device(device)
     print('Current cuda device: ', torch.cuda.current_device())
     
+    # U-net 모델 설정.
     model = Unet(in_chans = args.in_chans, out_chans = args.out_chans)
     model.to(device=device)
+    # Loss function: SSIMLOSS
     loss_type = SSIMLoss().to(device=device)
     optimizer = torch.optim.Adam(model.parameters(), args.lr)
 

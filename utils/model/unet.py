@@ -86,13 +86,16 @@ class Down(nn.Module):
     def forward(self, x):
         return self.layers(x)
 
-
+# U-net에서 위로 올라가는 과정. pooling의 반대 과정을 거친다.
 class Up(nn.Module):
 
     def __init__(self, in_chans, out_chans):
         super().__init__()
         self.in_chans = in_chans
         self.out_chans = out_chans
+        # deconvolution이다.
+        # 실제로는, Conv의 역연산이 아니라, Transpose 연산임.
+        # Decoder에서도 feature map의 크기를 복원하기 위해 자주 사용된다.
         self.up = nn.ConvTranspose2d(in_chans, in_chans // 2, kernel_size=2, stride=2)
         self.conv = ConvBlock(in_chans, out_chans)
 
